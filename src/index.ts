@@ -61,7 +61,8 @@ app.get('/ws', upgradeWebSocket((c) => {
       const busWs = ws.raw as ServerWebSocket;
       const ip = busWs.remoteAddress;
       if (connectedClients[ip]?.CanWritter) {
-        busWs.publish("rich-presence", JSON.stringify({ status: "offline", file: "" }).toString())
+        currentStatus = { status: "offline", file: "" }
+        busWs.publish("rich-presence", JSON.stringify(currentStatus).toString())
       }
       delete connectedClients[ip]
       console.log("connection closed")
