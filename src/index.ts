@@ -45,7 +45,6 @@ app.get('/ws', upgradeWebSocket((c) => {
           return;
         }
         currentStatus = newData
-
         const busWs = ws.raw as ServerWebSocket
 
         const ip = busWs.remoteAddress;
@@ -78,5 +77,9 @@ app.get('/', (c) => {
 export default {
   port: process.env.PORT || 3000,
   fetch: app.fetch,
-  websocket
+  websocket: {
+    idleTimeout: 10,
+    pingInterval: 5,
+    ...websocket,
+  }
 } 
