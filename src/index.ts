@@ -25,7 +25,7 @@ app.use(limiter)
 const activeSockets = new Set<ServerWebSocket>();
 app.get('/ws', upgradeWebSocket((c) => {
   const tokenRecibido = c.req.query("token");
-  const tokenEsperado = Bun.env.Validate;
+  const tokenEsperado = Bun.env.token;
   const canWrite = tokenRecibido === tokenEsperado;
 
   console.log(`[AUTH] Recibido: "${tokenRecibido}" | Esperado: "${tokenEsperado}" | Match: ${canWrite}`);
