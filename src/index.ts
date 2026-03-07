@@ -17,54 +17,54 @@ let currentStatus = {
   "status": "offline",
   "file": "",
 }
-interface ClientInterface {
-  CanWritter: boolean
-}
 
-const connectedClients: Record<string, ClientInterface> = {};
 
 app.use(limiter)
 
+type WSContext = {
+  canWrite: boolean
+}
+
 app.get('/ws', upgradeWebSocket((c) => {
+  let context: WSContext = { canWrite: false };
+
   return {
     onOpen(_, ws) {
-      const busWs = ws.raw as ServerWebSocket
-      const authToken = c.req.query("token")
-      const ip = busWs.remoteAddress;
-      connectedClients[ip] = {
-        CanWritter: authToken === Bun.env.Validate
-      };
-      busWs.subscribe("rich-presence")
-      ws.send(JSON.stringify(currentStatus))
-      console.log("Subscribe client")
+      const busWs = ws.raw as ServerWebSocket;
+      const authToken = c.req.query("token");
+
+      if (authToken === Bun.env.Validate) {
+        context.canWrite = true;
+      }
+
+      busWs.subscribe("rich-presence");
+
+      ws.send(JSON.stringify(currentStatus));
+      console.log(context.canWrite ? "Neovim connected" : "Web client connected");
     },
+
     onMessage(event, ws) {
       try {
-        const newData = JSON.parse(event.data.toString());
-        if (!newData.status || newData.status.length === 0) {
-          return;
-        }
-        currentStatus = newData
-        const busWs = ws.raw as ServerWebSocket
+        const message = event.data.toString();
+        const newData = JSON.parse(message);
 
-        const ip = busWs.remoteAddress;
-        if (connectedClients[ip]?.CanWritter) {
-          busWs.publish("rich-presence", event.data.toString())
-        }
+        if (!newData.status) return;
 
+        if (context.canWrite) {
+          currentStatus = newData;
+          (ws.raw as ServerWebSocket).publish("rich-presence", message);
+        }
       } catch (e) {
-        console.error(e)
+        console.error("Error parseando:", e);
       }
     },
+
     onClose: (_, ws) => {
-      const busWs = ws.raw as ServerWebSocket;
-      const ip = busWs.remoteAddress;
-      if (connectedClients[ip]?.CanWritter) {
-        currentStatus = { status: "offline", file: "" }
-        busWs.publish("rich-presence", JSON.stringify(currentStatus).toString())
+      if (context.canWrite) {
+        currentStatus = { status: "offline", file: "" };
+        (ws.raw as ServerWebSocket).publish("rich-presence", JSON.stringify(currentStatus));
+        console.log("Neovim disconnected - Status set to offline");
       }
-      delete connectedClients[ip]
-      console.log("connection closed")
     }
   }
 }))
