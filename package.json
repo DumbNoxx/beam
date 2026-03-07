@@ -1,0 +1,13 @@
+{
+  "name": "websocket-connection-portfolio",
+  "scripts": {
+    "dev": "bun run --hot src/index.ts"
+  },
+  "dependencies": {
+    "hono": "^4.12.5",
+    "hono-rate-limiter": "^0.5.3"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
