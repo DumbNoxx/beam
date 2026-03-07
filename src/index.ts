@@ -21,26 +21,17 @@ let currentStatus = {
 
 app.use(limiter)
 
-type WSContext = {
-  canWrite: boolean
-}
 
 app.get('/ws', upgradeWebSocket((c) => {
-  let context: WSContext = { canWrite: false };
+  const canWrite = c.req.query("token") === Bun.env.Validate
 
   return {
     onOpen(_, ws) {
-      const busWs = ws.raw as ServerWebSocket;
-      const authToken = c.req.query("token");
-
-      if (authToken === Bun.env.Validate) {
-        context.canWrite = true;
-      }
-
-      busWs.subscribe("rich-presence");
+      const srv = ws.raw as ServerWebSocket;
+      srv.subscribe("rich-presence");
 
       ws.send(JSON.stringify(currentStatus));
-      console.log(context.canWrite ? "Neovim connected" : "Web client connected");
+      console.log(canWrite ? "Neovim connected" : "Web client connected");
     },
 
     onMessage(event, ws) {
@@ -50,17 +41,17 @@ app.get('/ws', upgradeWebSocket((c) => {
 
         if (!newData.status) return;
 
-        if (context.canWrite) {
+        if (canWrite) {
           currentStatus = newData;
           (ws.raw as ServerWebSocket).publish("rich-presence", message);
         }
       } catch (e) {
-        console.error("Error parseando:", e);
+        console.error("Error parsers:", e);
       }
     },
 
     onClose: (_, ws) => {
-      if (context.canWrite) {
+      if (canWrite) {
         currentStatus = { status: "offline", file: "" };
         (ws.raw as ServerWebSocket).publish("rich-presence", JSON.stringify(currentStatus));
         console.log("Neovim disconnected - Status set to offline");
