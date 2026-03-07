@@ -77,9 +77,5 @@ app.get('/', (c) => {
 export default {
   port: process.env.PORT || 3000,
   fetch: app.fetch,
-  websocket: {
-    idleTimeout: 10,
-    pingInterval: 5,
-    ...websocket,
-  }
+  websocket
 } 
