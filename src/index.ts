@@ -7,7 +7,7 @@ import { rateLimiter } from 'hono-rate-limiter'
 const app = new Hono()
 const limiter = rateLimiter({
   windowMs: 10 * 60 * 1000,
-  limit: 5,
+  limit: 10,
   standardHeaders: "draft-6",
   skip: (c) => c.req.query("token") === Bun.env.token,
   keyGenerator: (c) => c.req.header("cf-connecting-ip") || c.req.header("x-forwarded-for") || "quest"
