@@ -9,7 +9,12 @@ const limiter = rateLimiter({
   windowMs: 10 * 60 * 1000,
   limit: 10,
   standardHeaders: "draft-6",
-  skip: (c) => c.req.query("token") === Bun.env.token,
+  skip: (c) => {
+   if (c.req.query("token") === Bun.env.token) {
+       return c.req.query("token") === Bun.env.token
+   }  
+   return c.req.header("Auth") === `Bearer${Bun.env.token}`
+  },
   keyGenerator: (c) => c.req.header("cf-connecting-ip") || c.req.header("x-forwarded-for") || "quest"
 })
 
