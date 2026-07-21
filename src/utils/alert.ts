@@ -12,10 +12,19 @@ export const AlertEmail = async () => {
     const email = Bun.env.email
     console.log(email);
     if (!email) return;
-    await resend.emails.send({
-        from: "AlertEmail <support@nxbim.xyz>",
-        to:  email,
-        subject: "Alert Homelab Down",
-        html,
-    })
+    try {
+        const { data, error } = await resend.emails.send({
+            from: "AlertEmail <support@nxbim.xyz>",
+            to: email,
+            subject: "Alert Homelab Down",
+            html,
+        });
+        if (error) {
+            console.log("resend reject", JSON.stringify(error, null, 2));
+            return
+        }
+        console.log("send email", data?.id)
+    } catch (err) {
+        console.log("Exception", err)
+    }
 }
