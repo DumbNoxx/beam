@@ -14,7 +14,7 @@ export const AlertEmail = async () => {
     if (!email) return;
     try {
         const { data, error } = await resend.emails.send({
-            from: "AlertEmail <support@nxbim.xyz>",
+            from: "AlertEmail <support@nxbin.xyz>",
             to: email,
             subject: "Alert Homelab Down",
             html,
