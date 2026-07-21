@@ -10,6 +10,7 @@ const html = `
 
 export const AlertEmail = async () => {
     const email = Bun.env.email
+    console.log(email);
     if (!email) return;
     await resend.emails.send({
         from: "AlertEmail <support@nxbim.xyz>",

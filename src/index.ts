@@ -83,6 +83,7 @@ let heartbeatTimeout: Timer | null = null;
 app.post("/heartbeat", (c) => {
     if (heartbeatTimeout) {
         clearTimeout(heartbeatTimeout);
+        console.log(Bun.env.email)
         console.log("received signal");
     }
     heartbeatTimeout = setTimeout(async () => {
