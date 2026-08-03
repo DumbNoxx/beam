@@ -30,6 +30,8 @@ app.use(limiter)
 
 
 const activeSockets = new Set<ServerWebSocket>();
+const writerSockets = new Set<ServerWebSocket>();
+let activeWriter: ServerWebSocket | null = null;
 app.get('/ws', upgradeWebSocket((c) => {
     const tokenRecibido = c.req.query("token");
     const tokenEsperado = Bun.env.token;
@@ -42,12 +44,23 @@ app.get('/ws', upgradeWebSocket((c) => {
             const srv = ws.raw as ServerWebSocket;
             activeSockets.add(srv)
 
+            if (canWrite) {
+                writerSockets.add(srv);
+                if (activeWriter) {
+                    console.log("Ignoring additional writer connection");
+                } else {
+                    activeWriter = srv;
+                    console.log("Neovim connected");
+                }
+            } else {
+                console.log("Web client connected");
+            }
+
             ws.send(JSON.stringify(currentStatus));
-            console.log(canWrite ? "Neovim connected" : "Web client connected");
         },
 
         onMessage(event, ws) {
-            if (!canWrite) return
+            if (!canWrite || ws.raw !== activeWriter) return
 
             try {
 
@@ -72,8 +85,25 @@ app.get('/ws', upgradeWebSocket((c) => {
         onClose: (_, ws) => {
             const srv = ws.raw as ServerWebSocket;
             activeSockets.delete(srv);
-            if (canWrite) {
-                console.log("Neovim disconnected - Status set to offline");
+            if (canWrite) writerSockets.delete(srv);
+
+            if (srv === activeWriter) {
+                activeWriter = null;
+                let promoted = false;
+                writerSockets.forEach((socket) => {
+                    if (!promoted) {
+                        activeWriter = socket;
+                        promoted = true;
+                        console.log("Promoting next writer connection");
+                    }
+                });
+                if (!activeWriter) {
+                    currentStatus = { status: "offline", file: "" };
+                    activeSockets.forEach((socket) => {
+                        socket.send(JSON.stringify(currentStatus));
+                    });
+                    console.log("Neovim disconnected - Status set to offline");
+                }
             }
         }
     }
@@ -105,5 +135,5 @@ app.get('/', (c) => {
 export default {
     port: process.env.PORT || 3000,
     fetch: app.fetch,
-    websocket
+    websocket: { ...websocket, idleTimeout: 60 }
 } 
