@@ -1,6 +1,6 @@
 To install dependencies:
 ```sh
-bun install
+bun install 
 ``` 
 
 To run:
